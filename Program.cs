@@ -4,12 +4,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Persistence;
 using Persistence.Data;
+using Persistence.Repositories;
+using Service;
+using Service.MappingProfiles;
+using ServiceAbstraction;
+using System.Threading.Tasks;
 
 namespace NGUWep.api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -22,12 +27,15 @@ namespace NGUWep.api
                 Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
             builder.Services.AddScoped<IDataSeeding, DataSeeding>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddAutoMapper(typeof(Service.AssemblyReference).Assembly);
+            builder.Services.AddScoped<IServiceManager, ServiceManager>();
             #endregion
 
             var app = builder.Build();
             var Scope = app.Services.CreateScope();
             var ObjectDataSeed = Scope.ServiceProvider.GetRequiredService<IDataSeeding>();
-            ObjectDataSeed.DataSeed();
+            await ObjectDataSeed.DataSeedAsync();
 
 
             #region Configure The HTTP Request Pipeline
